@@ -1,6 +1,8 @@
 # DataBinding 事件处理
 
-DataBinding 也可以处理 view 的一些事件属性 (e.g. onClick). 
+Google 官方文档该部分有点扯淡, 不适合我这样的初学者, 所以归纳总结一下.
+
+DataBinding 可以处理 view 的一些事件属性 (e.g. onClick). 
 
 > 事件属性的名称通常是通过相关监听器的名称确定的, 比如, View.OnLongClickListener 有方法 onLongClick(), 所以事件属性的名称就是 android:onLongClick.
 
@@ -12,12 +14,6 @@ DataBinding 也可以处理 view 的一些事件属性 (e.g. onClick).
 #### 方法引用
 
 类似于绑定一个 Activity 的方法给 android:onClick. 相比于 View#onClick 属性, 一个主要的优点就是在编译时就绑定了, 不用担心运行时报错. Activity 那种是运行时报错, 如果方法不存在或者方法名错误, 应用在运行的时候才会崩溃.
-
-方法引用和监听绑定主要的不同就是, 
-
-The major difference between Method References and Listener Bindings is that the actual listener implementation is created when the data is bound, not when the event is triggered. If you prefer to evaluate the expression when the event happens, you should use listener binding.
-
-To assign an event to its handler, use a normal binding expression, with the value being the method name to call. For example, if your data object has two methods:
 
 ```
 public class MyHandlers {
@@ -38,17 +34,19 @@ The binding expression can assign the click listener for a View:
        android:orientation="vertical"
        android:layout_width="match_parent"
        android:layout_height="match_parent">
+
        <TextView android:layout_width="wrap_content"
            android:layout_height="wrap_content"
            android:text="@{user.firstName}"
            android:onClick="@{handlers::onClickFriend}"/>
+
    </LinearLayout>
 </layout>
 ```
 
 #### 监听绑定
 
-监听绑定就是绑定事件发生时要运行的公式. They are similar to method references, but they let you run arbitrary data binding expressions.
+监听绑定就是绑定事件发生时要运行的公式. 和方法引用有点像, but they let you run arbitrary data binding expressions.
 
 In method references, the parameters of the method must match the parameters of the event listener. In Listener Bindings, only your return value must match the expected return value of the listener (unless it is expecting void). 举个例子:
 
@@ -140,3 +138,4 @@ android:onClick="@{(v) -> v.isVisible() ? doSomething() : void}"
 ### 参考
 
 * [Google Databinding](https://developer.android.google.cn/topic/libraries/data-binding/index.html)
+* [DataBinding学习使用进阶之路](https://www.jianshu.com/p/5d6132e6dc14)
