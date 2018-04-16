@@ -10,7 +10,7 @@ DataBinding 可以指定绑定处理 view 的一些事件属性, 比如 onClick,
 android:onClick="onClickView"
 ```
 
-这里的 onClickView 就是该布局里的一个公共方法:
+这里的 onClickView 就是该布局所在的 Activity 里的一个公共方法:
 
 ```
 public void onClickView(View view){
@@ -34,9 +34,21 @@ Databinding 则提供了 2 种不同的方式:
 
 顾名思义, 在 XML 里引用一个方法. 有点类似于上面提到的绑定一个 Activity 里的方法给 android:onClick. 但是最大的不同是在编译时就绑定了, 不用担心运行时报错.
 
+通过这种方式引用的方法, 它必须是 public 并且有且只能有 View view 作为唯一参数, 否则必报 did not match signature 异常. 在 Google 官方文档里提到的 "Note that the signature of the method in the expression must exactly match the signature of the method in the Listener objec" 就是指方法引用的方法必须和 onClickListener (如果是用 android:onClick) 的 onClick 方法有一个样的 signature.
+
 ```
-public class MyHandlers {
-    public void onClickFriend(View view) { ... }
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        binding.setHandler(this);
+    }
+
+    public void clickView(View view){
+        Toast.makeText(view.getContext(),"hello",Toast.LENGTH_SHORT).show();
+    }
 }
 ```
 
@@ -46,40 +58,38 @@ The binding expression can assign the click listener for a View:
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
    <data>
-       <variable name="handlers" type="com.example.MyHandlers"/>
-       <variable name="user" type="com.example.User"/>
+       <variable name="handler" type="com.example.MainActivity"/>
    </data>
    <LinearLayout
        android:orientation="vertical"
        android:layout_width="match_parent"
        android:layout_height="match_parent">
 
-       <TextView android:layout_width="wrap_content"
+       <TextView 
+           android:layout_width="wrap_content"
            android:layout_height="wrap_content"
-           android:text="@{user.firstName}"
-           android:onClick="@{handlers::onClickFriend}"/>
+           android:onClick="@{handler::clickView}"/>
 
    </LinearLayout>
 </layout>
 ```
 
+> 这里既可以写 handler::clickView 也可以写 handler.clickView
+
 #### 监听绑定
 
-监听绑定就是绑定事件发生时要运行的公式. 和方法引用有点像, but they let you run arbitrary data binding expressions.
-
-In method references, the parameters of the method must match the parameters of the event listener. In Listener Bindings, only your return value must match the expected return value of the listener (unless it is expecting void). 举个例子:
+在方法引用里, 方法的参数必须符合事件监听器的参数. 在监听绑定中, 只需要你的方法的返回值符合事件监听器即可. 举个例子:
 
 ```
 public class Presenter {
     public void onSaveClick(Task task){}
 }
 ```
-
 ```
 <?xml version="1.0" encoding="utf-8"?>
 	<layout xmlns:android="http://schemas.android.com/apk/res/android">
       	<data>
-         	<variable name="task" type="com.android.example.Task" />
+         	  <variable name="task" type="com.android.example.Task" />
           	<variable name="presenter" type="com.android.example.Presenter" />
       	</data>
       	<LinearLayout 
@@ -95,62 +105,12 @@ public class Presenter {
   </layout>
 ```
 
-Listeners are represented by lambda expressions that are allowed only as root elements of your expressions. When a callback is used in an expression, Data Binding automatically creates the necessary listener and registers for the event. When the view fires the event, Data Binding evaluates the given expression. As in regular binding expressions, you still get the null and thread safety of Data Binding while these listener expressions are being evaluated.
-
-Note that in the example above, we haven't defined the view parameter that is passed into onClick(android.view.View). Listener bindings provide two choices for listener parameters: you can either ignore all parameters to the method or name all of them. If you prefer to name the parameters, you can use them in your expression. For example, the expression above could be written as:
-
-```
-android:onClick="@{(view) -> presenter.onSaveClick(task)}"
-```
-
-Or if you wanted to use the parameter in the expression, it could work as follows:
-
-```
-public class Presenter {
-    public void onSaveClick(View view, Task task){}
-}
-```
-```
-android:onClick="@{(theView) -> presenter.onSaveClick(theView, task)}"
-```
-
-You can use a lambda expression with more than one parameter:
-
-```
-public class Presenter {
-    public void onCompletedChanged(Task task, boolean completed){}
-}
-```
-```
-<CheckBox 
-    android:layout_width="wrap_content" 
-    android:layout_height="wrap_content"
-    android:onCheckedChanged="@{(cb, isChecked) -> presenter.completeChanged(task, isChecked)}" />
-```
-
-If the event you are listening to returns a value whose type is not void, your expressions must return the same type of value as well. For example, if you want to listen for the long click event, your expression should return boolean.
-
-```
-public class Presenter {
-    public boolean onLongClick(View view, Task task){}
-}
-```
-```
-android:onLongClick="@{(theView) -> presenter.onLongClick(theView, task)}"
-```
-
-如果因为对象为 null 的原因, 公式没办法计算, DataBinding 就会根据 Java 返回值类型返回默认值. 比如, 引用类型就是 null , int 为 0, boolean 为 false for boolean 等等.
-
-你也可以在监听绑定中使用三元公式或其他简单的逻辑:
-
-```
-android:onClick="@{(v) -> v.isVisible() ? doSomething() : void}"
-```
+这里只需要保证 onSaveClick 方法的返回值为 void 即可. 不再需要强制写 View view, 且能自定义参数.
 
 ### 两种方法的比较
 
-* 方法引用要求响应方法的签名和事件listener中的签名完全一致，Listener Bindings只要求返回值一致。
-* 方法引用在编译时绑定, 监听绑定在运行时才会执行绑定lambda表达式。
+* 方法引用要求响应方法的签名和事件监听器中的签名完全一致，监听绑定只要求返回值一致。
+* 方法引用在编译时绑定, 监听绑定在运行时才会执行绑定的 lambd a表达式。
 * 方法引用不可以自定义参数, 监听绑定可以自定义参数.
 * 监听绑定可以编写简单的代码逻辑
 
