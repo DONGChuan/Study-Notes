@@ -96,7 +96,12 @@ protected void onPause() {
 
 ### 广播的类型
 
-广播的类型主要分为 5 类:
+发送的广播大体可以分为 2 类:
+
+1. Normal broadcasts 普通广播也叫无序广播, 会异步的发送给所有的 Receiver, 接收到广播的顺序是不确定的, 有可能是同时.
+2. Ordered broadcasts 有序广播, 广播会先发送给优先级高 (android:priority)的 Receiver, 而且这个 Receiver 有权修改广播内容或者是决定是继续发送到下一个 Receiver 或者是直接终止广播.
+
+我们还可以进一步将广播细分为 5 类:
 
 1. Normal Broadcast - 普通广播
 2. System Broadcast - 系统广播
@@ -106,7 +111,7 @@ protected void onPause() {
 
 ### Normal Broadcast
 
-即开发者自己定义 intent 发送广播：
+即开发者自己定义 intent 发送广播
 
 ```
 Intent intent = new Intent();
